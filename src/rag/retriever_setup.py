@@ -5,14 +5,15 @@ Retriever setup and vector store configuration.
 import os
 
 from langchain_core.documents import Document
-from langchain_core.tools import create_retriever_tool
-from langchain_openai import OpenAIEmbeddings
+from langchain_core.tools import create_retriever_tool, tool
+from langchain_huggingface import HuggingFaceEmbeddings
 # from langchain_qdrant import QdrantVectorStore
 from langchain_community.vectorstores import FAISS
 
 from src.core.config import settings
 
-embeddings = OpenAIEmbeddings()
+# Free local embeddings — no API key needed
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # Global variable to store the FAISS vectorstore instance
 # This ensures get_retriever() can access documents stored by retriever_chain()
@@ -62,26 +63,14 @@ def get_retriever():
 
     Returns the retriever tool that can search documents stored by retriever_chain().
     If no documents have been uploaded yet, creates a retriever with a dummy document.
+    If the embedding API is unavailable, returns a fallback tool so the server can still start.
 
     Returns:
         A LangChain retriever tool configured for the vector store.
-
-    Raises:
-        Exception: If vector store initialization fails.
     """
     global _faiss_vectorstore
 
     try:
-        # Commenting out Qdrant code for temporary FAISS usage
-        # vectorstore = QdrantVectorStore.from_documents(
-        #     documents=[],
-        #     embedding=embeddings,
-        #     url=settings.QDRANT_URL,
-        #     api_key=settings.QDRANT_API_KEY,
-        #     collection_name=settings.CODE_COLLECTION,
-        # )
-        # retriever = vectorstore.as_retriever()
-
         # Use the global vectorstore if it exists (documents have been uploaded)
         if _faiss_vectorstore is not None:
             retriever = _faiss_vectorstore.as_retriever()
@@ -119,5 +108,13 @@ def get_retriever():
         return retriever_tool
 
     except Exception as e:
-        print(f"Error initializing retriever: {e}")
-        raise Exception(e)
+        print(f"Warning: Could not initialize FAISS retriever ({e}). Using fallback tool.")
+        print("The server will start, but document retrieval won't work until a valid OpenAI API key is configured.")
+
+        # Return a fallback tool so the app can start without crashing
+        @tool
+        def retriever_customer_uploaded_documents(query: str) -> str:
+            """Use this tool to answer questions about uploaded documents. Currently unavailable - no documents indexed or embedding API unreachable."""
+            return "Retriever is not available. Please ensure a valid OpenAI API key is configured and upload a document first."
+
+        return retriever_customer_uploaded_documents

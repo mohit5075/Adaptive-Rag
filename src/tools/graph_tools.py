@@ -32,20 +32,29 @@ def routing_tool(state: State) -> Literal["retriever", "general_llm", "web_searc
         return "web_search"
 
 
-def doc_tool(state: State) -> Literal["rewrite", "generate"]:
+def doc_tool(state: State) -> Literal["rewrite", "generate", "web_search"]:
     """
     Determine whether the query needs rewriting based on grading score.
+    Falls back to web_search after 3 failed retries to prevent infinite loops.
 
     Args:
         state (State): The current state of the graph.
 
     Returns:
-        The next node: "generate" if score is "yes", otherwise "rewrite".
+        The next node: "generate" if score is "yes", "web_search" if max retries
+        exceeded, otherwise "rewrite".
     """
     score = state["binary_score"]
-    print(f"[doc_tool] Routing based on score: {score}")
+    retry_count = state.get("retry_count") or 0
+    max_retries = 3
+
+    print(f"[doc_tool] Routing based on score: {score}, retry_count: {retry_count}")
+
     if score == "yes":
         return "generate"
+    elif retry_count >= max_retries:
+        print(f"[doc_tool] Max retries ({max_retries}) reached. Falling back to web_search.")
+        return "web_search"
     else:
         return "rewrite"
 

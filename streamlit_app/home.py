@@ -1,12 +1,13 @@
 """
 Home page for Streamlit authentication interface.
+
+Uses a simple local session (no external auth service required).
 """
 
 import logging
+import uuid
 
 import streamlit as st
-
-from utils.api_client import create_user, login_user, get_api_token
 
 # Hide sidebar for cleaner look
 hide_sidebar_style = """
@@ -31,44 +32,25 @@ st.set_page_config(page_title="LangGraph Chat - Login")
 
 st.title("🔐 Welcome to LangGraph Assistant")
 
-token = ""
+# If already logged in, redirect to chat
+if "session_id" in st.session_state and "username" in st.session_state:
+    st.switch_page("pages/chat.py")
 
-# Step 1: Fetch API token only once per session
-if "session_id" not in st.session_state:
-    token = get_api_token()
-    if token:
-        st.session_state["session_id"] = token
-        st.success("API token initialized.")
-    else:
-        st.error("Failed to initialize API token.")
-        st.stop()
-
-# Step 2: Render login/signup form
+# Simple login form — generates a local session ID (no Rust auth service needed)
 with st.form("auth_form"):
     username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    mode = st.radio("Choose action:", ["Login", "Create Account"])
-    submit = st.form_submit_button("Submit")
+    submit = st.form_submit_button("Start Chatting")
 
-# Step 3: Handle login/account creation
 if submit:
-    if not username or not password:
-        st.error("Username and password required.")
+    if not username:
+        st.error("Please enter a username.")
     else:
-        if mode == "Create Account":
-            success = create_user(username, password, st.session_state["session_id"])
-            if success:
-                st.success("User created. Please log in.")
-            else:
-                st.error("User creation failed.")
-        else:
-            response = login_user(username, password, st.session_state["session_id"])
-            if response and response.get("jwt"):
-                st.session_state["jwt_token"] = response["jwt"]
-                st.session_state["username"] = username
-                st.switch_page("pages/Chat.py")
-            else:
-                st.error("Login failed. Downstream API error: Received empty JWT token.")
+        # Generate a unique session ID for this user
+        session_id = f"{username}_{uuid.uuid4().hex[:8]}"
+        st.session_state["session_id"] = session_id
+        st.session_state["username"] = username
+        logger.info("User '%s' logged in with session '%s'", username, session_id)
+        st.switch_page("pages/chat.py")
 
 # Debug logs section
 with st.expander("📜 Debug Logs"):

@@ -99,7 +99,7 @@ Create or update your `.env` file:
 ```env
 # Qdrant Configuration
 QDRANT_URL=https://your-cluster-id.aws-us-east-1.qdrant.io:6333
-QDRANT_API_KEY=your-api-key-here
+QDRANT_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.LWPcCgsTprNm1jUZ7J94bBdn9F3Fe_-BSzR-UImeK5Q
 QDRANT_CODE_COLLECTION=code_documents
 QDRANT_DOCS_COLLECTION=documents
 ```
@@ -113,8 +113,8 @@ from qdrant_client import QdrantClient
 
 # Test connection
 client = QdrantClient(
-    url="https://your-cluster-id.aws-us-east-1.qdrant.io:6333",
-    api_key="your-api-key-here"
+    url="https://afc0e154-92e8-4a89-b0ec-ebe70861f53b.eu-west-2-0.aws.cloud.qdrant.io:6333",
+    api_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.LWPcCgsTprNm1jUZ7J94bBdn9F3Fe_-BSzR-UImeK5Q"
 )
 
 # List collections

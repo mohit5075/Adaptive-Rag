@@ -119,16 +119,24 @@ def query_backend(query: str, session_id: str) -> str:
     url = f"{PYTHON_BASE_URL}/rag/query"
     print(f"[query_backend] Calling: {url}")
 
-    response = requests.post(
-        url,
-        json={"query": query, "session_id": session_id},
-        allow_redirects=False
-    )
+    try:
+        response = requests.post(
+            url,
+            json={"query": query, "session_id": session_id},
+            allow_redirects=False,
+            timeout=120
+        )
 
-    if response.status_code == 200:
-        return response.json()["result"]["content"]
-    else:
-        return f"Error: {response.status_code} - {response.text}"
+        if response.status_code == 200:
+            return response.json()["result"]["content"]
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+    except requests.ConnectionError:
+        return "Error: Could not connect to the FastAPI backend. Make sure it is running on port 8000."
+    except requests.Timeout:
+        return "Error: Request timed out. The backend took too long to respond."
+    except Exception as e:
+        return f"Error: {e}"
 
 
 def document_upload_rag(file, description: str) -> bool:
@@ -147,12 +155,17 @@ def document_upload_rag(file, description: str) -> bool:
     }
     url = f"{PYTHON_BASE_URL}/rag/documents/upload"
 
-    if file:
-        files = {"file": (file.name, file, file.type)}
-        response = requests.post(url, files=files, headers=headers)
-        print(response)
+    try:
+        if file:
+            files = {"file": (file.name, file, file.type)}
+            response = requests.post(url, files=files, headers=headers, timeout=120)
+            print(response)
 
-        if response.status_code == 200:
-            return True
+            if response.status_code == 200:
+                return True
+    except requests.ConnectionError:
+        print("Error: Could not connect to FastAPI backend for document upload.")
+    except Exception as e:
+        print(f"Error uploading document: {e}")
 
     return False

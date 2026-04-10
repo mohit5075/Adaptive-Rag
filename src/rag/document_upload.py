@@ -4,7 +4,6 @@ Document upload and processing module.
 
 import os
 import tempfile
-
 from fastapi import UploadFile, File
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -52,7 +51,6 @@ def documents(description: str, file: UploadFile = File(...)):
         loader = PyPDFLoader(tmp_path)
     else:
         loader = TextLoader(tmp_path, encoding="utf-8")
-
     try:
         docs = loader.load()
     except Exception as e:
@@ -81,7 +79,6 @@ def documents(description: str, file: UploadFile = File(...)):
         chunk_overlap=150
     )
     chunks = splitter.split_documents(docs)
-
     return retriever_chain(chunks)
 
 

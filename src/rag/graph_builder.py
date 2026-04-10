@@ -133,19 +133,22 @@ def rewrite_query(state: State):
         state (State): State of the question.
 
     Returns:
-        dict: Updated latest_query.
+        dict: Updated latest_query and incremented retry_count.
     """
     query = state["latest_query"]
+    retry_count = state.get("retry_count") or 0
+
     rewrite_prompt = PromptTemplate(
         template=config.prompt("rewrite_prompt"),
         input_variables=["query"]
     )
     chain = rewrite_prompt | llm
     result = chain.invoke({"query": query})
-    print(result)
+    print(f"[rewrite] Retry {retry_count + 1}: {result.content}")
 
     return {
-        "latest_query": result.content
+        "latest_query": result.content,
+        "retry_count": retry_count + 1
     }
 
 

@@ -2,9 +2,13 @@
 Chat page for the Streamlit application.
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 import streamlit as st
 
-from streamlit_app.utils.api_client import query_backend, document_upload_rag
+from utils.api_client import query_backend, document_upload_rag
 
 # Configure page settings
 st.set_page_config(
@@ -39,7 +43,7 @@ if st.session_state.show_logout_confirm:
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             # Redirect to home page
-            st.switch_page("Home.py")
+            st.switch_page("home.py")
     with col_cancel:
         if st.button("❌ Cancel"):
             st.session_state.show_logout_confirm = False
@@ -94,7 +98,7 @@ user_input = st.chat_input("Ask a question...")
 # Process user input and get response
 if user_input:
     st.session_state.chat_history.append(("user", user_input))
-    response = query_backend(user_input, st.session_state["jwt_token"])
+    response = query_backend(user_input, st.session_state["session_id"])
     st.session_state.chat_history.append(("assistant", response))
     st.rerun()  # Rerun script to display updated messages
 
